@@ -215,3 +215,63 @@ edu_parent_counts <- clean_data %>%
 dem_percent_table(edu_parent_counts)
 ```
 
+## Birth country
+
+```{r}
+birth_country_counts <- clean_data %>% 
+  select(subid, country_birth) %>% 
+  na.omit() %>% 
+  unique() %>% 
+  group_by(country_birth) %>% 
+  count()
+
+dem_percent_table(birth_country_counts)
+```
+
+## Country raised
+
+```{r}
+raised_country_counts <- clean_data %>% 
+  select(subid, country_raised) %>% 
+  na.omit() %>% 
+  unique() %>% 
+  group_by(country_raised) %>% 
+  count()
+
+dem_percent_table(raised_country_counts)
+```
+
+### Follow-up years in US
+
+```{r}
+clean_data %>% 
+  filter(country_raised != "Raised in US") %>% 
+  select(raised_follow)
+```
+
+Should we removed the 5 primarily raised in another country? They all are US citizens and have lived in the US for 12-35 years. Seems like they have a good handle on US politics.
+
+## Native language
+
+```{r}
+lang_counts <- language_counts <- clean_data %>% 
+  select(subid, native_language) %>% 
+  na.omit() %>% 
+  unique() %>% 
+  group_by(native_language) %>% 
+  count()
+
+dem_percent_table(lang_counts)
+```
+
+### Native language follow-up
+
+```{r}
+clean_data %>% 
+  filter(native_language == "Not English") %>% 
+  select(native_lang_follow)
+```
+
+Everyone has spoken for almost 20 years or more, so doesn't seem like we need to filter anyone out.
+
+# EFA
