@@ -17,14 +17,20 @@
 library(magrittr)
 library(tidyverse)
 library(rio)
+library(lubridate)
 
 ##### Importing the data #####
 
 # This data has been manually reviewed for completion of PT task; filter will be applied at end of this .R document
 # Some variables were removed from the original document in order to prevent identifiable data from being uploaded online: LocationLatitude, LocationLongitude, prolificID_typed
 wide_data <- import("pilot_raw_removed4.csv")
-clean_data <- wide_data %>% 
-  mutate(subid = as.factor(subid),
+
+get_clean_data <- function(wide_df){
+  wide_df %>% 
+  # Making relevant variables categorical & dates correct
+  mutate(subid = as.factor(subid), 
+         recorded_date = mdy_hm(recorded_date),
+         condition = as.factor(condition),
          vote_check = as.factor(dplyr::recode(vote_check,
                                     `1` = "Trump",
                                     `2` = "Biden", # Prolific pre-screen worked and there is only one level of Biden supporters
@@ -92,14 +98,77 @@ clean_data <- wide_data %>%
          native_language = as.factor(dplyr::recode(native_language,
                                                    `1` = "English",
                                                    `2` = "Not English"))) %>% 
-  mutate_at(c("distance_coffee", "distance_town", "realistic_q", "symbolic_q",
+  # Making relevant variables numeric
+  mutate_at(c("distance_coffee", "distance_town", "realistic_q", "symbolic_q", 
             "explicit_targ", "explicit_group", "pol_orient_1", "pol_orient_2",
             "pol_orient_3", "age"),
-            list(~as.numeric(.)))
-
+            list(~as.numeric(.))) %>% 
+  # Filtering out incorrect manipulation check responses
+  ## Loss target - should say "yes" to Trump, no info about profession or covid
+  mutate(q_check_politics = case_when(condition == "loss_targ" & manip_check_politics == "Jen voted for Trump" ~ "Correct",
+                                     condition == "loss_targ" & manip_check_politics == "No information" ~ "Somewhat correct",
+                                     condition == "loss_targ" & manip_check_politics == "Don't remember" ~ "Incorrect",
+                                     condition == "loss_targ" & manip_check_politics == "Jen voted for Biden" ~ "Incorrect",
+                                     condition == "comp_targ" & manip_check_politics == "Jen voted for Trump" ~ "Correct",
+                                     condition == "comp_targ" & manip_check_politics == "No information" ~ "Incorrect",
+                                     condition == "comp_targ" & manip_check_politics == "Don't remember" ~ "Incorrect",
+                                     condition == "comp_targ" & manip_check_politics == "Jen voted for Biden" ~ "Incorrect",
+                                     condition == "covid_targ" & manip_check_politics == "Jen voted for Trump" ~ "Incorrect",
+                                     condition == "covid_targ" & manip_check_politics == "No information" ~ "Correct",
+                                     condition == "covid_targ" & manip_check_politics == "Don't remember" ~ "Incorrect",
+                                     condition == "covid_targ" & manip_check_politics == "Jen voted for Biden" ~ "Incorrect",
+                                     condition == "warm_targ" & manip_check_politics == "Jen voted for Trump" ~ "Correct",
+                                     condition == "warm_targ" & manip_check_politics == "No information" ~ "Incorrect",
+                                     condition == "warm_targ" & manip_check_politics == "Don't remember" ~ "Incorrect",
+                                     condition == "warm_targ" & manip_check_politics == "Jen voted for Biden" ~ "Incorrect",
+                                     condition == "control_targ" & manip_check_politics == "Jen voted for Trump" ~ "Incorrect",
+                                     condition == "control_targ" & manip_check_politics == "No information" ~ "Correct",
+                                     condition == "control_targ" & manip_check_politics == "Don't remember" ~ "Incorrect",
+                                     condition == "control_targ" & manip_check_politics == "Jen voted for Biden" ~ "Incorrect"),
+         q_check_covid = case_when(condition == "loss_targ" & manip_check_covid == "Jen does not support vaccination" ~ "Incorrect",
+                                   condition == "loss_targ" & manip_check_covid == "No information" ~ "Correct",
+                                   condition == "loss_targ" & manip_check_covid == "Don't remember" ~ "Incorrect",
+                                   condition == "comp_targ" & manip_check_covid == "Jen does not support vaccination" ~ "Incorrect",
+                                   condition == "comp_targ" & manip_check_covid == "No information" ~ "Correct",
+                                   condition == "comp_targ" & manip_check_covid == "Don't remember" ~ "Incorrect",
+                                   condition == "covid_targ" & manip_check_covid == "Jen does not support vaccination" ~ "Correct",
+                                   condition == "covid_targ" & manip_check_covid == "No information" ~ "Incorrect",
+                                   condition == "covid_targ" & manip_check_covid == "Don't remember" ~ "Incorrect",
+                                   condition == "warm_targ" & manip_check_covid == "Jen does not support vaccination" ~ "Incorrect",
+                                   condition == "warm_targ" & manip_check_covid == "No information" ~ "Correct",
+                                   condition == "warm_targ" & manip_check_covid == "Don't remember" ~ "Incorrect",
+                                   condition == "control_targ" & manip_check_covid == "Jen does not support vaccination" ~ "Incorrect",
+                                   condition == "control_targ" & manip_check_covid == "No information" ~ "Correct",
+                                   condition == "control_targ" & manip_check_covid == "Don't remember" ~ "Incorrect"),
+         q_check_profess = case_when(condition == "loss_targ" & manip_check_profess == "Jen is a business manager" ~ "Incorrect",
+                                     condition == "loss_targ" & manip_check_profess == "Jen is a teacher" ~ "Incorrect",
+                                     condition == "loss_targ" & manip_check_profess == "No information" ~ "Correct",
+                                     condition == "loss_targ" & manip_check_profess == "Don't remember" ~ "Incorrect",
+                                     condition == "comp_targ" & manip_check_profess == "Jen is a business manager" ~ "Correct",
+                                     condition == "comp_targ" & manip_check_profess == "Jen is a teacher" ~ "Incorrect",
+                                     condition == "comp_targ" & manip_check_profess == "No information" ~ "Incorrect",
+                                     condition == "comp_targ" & manip_check_profess == "Don't remember" ~ "Incorrect",
+                                     condition == "covid_targ" & manip_check_profess == "Jen is a business manager" ~ "Incorrect",
+                                     condition == "covid_targ" & manip_check_profess == "Jen is a teacher" ~ "Incorrect",
+                                     condition == "covid_targ" & manip_check_profess == "No information" ~ "Correct",
+                                     condition == "covid_targ" & manip_check_profess == "Don't remember" ~ "Incorrect",
+                                     condition == "warm_targ" & manip_check_profess == "Jen is a business manager" ~ "Incorrect",
+                                     condition == "warm_targ" & manip_check_profess == "Jen is a teacher" ~ "Correct",
+                                     condition == "warm_targ" & manip_check_profess == "No information" ~ "Incorrect",
+                                     condition == "warm_targ" & manip_check_profess == "Don't remember" ~ "Incorrect",
+                                     condition == "control_targ" & manip_check_profess == "Jen is a business manager" ~ "Incorrect",
+                                     condition == "control_targ" & manip_check_profess == "Jen is a teacher" ~ "Correct",
+                                     condition == "control_targ" & manip_check_profess == "No information" ~ "Incorrect",
+                                     condition == "control_targ" & manip_check_profess == "Don't remember" ~ "Incorrect")) %>% 
+  filter(q_check_politics != "Incorrect" & q_check_covid == "Correct" & q_check_profess == "Correct")
+}
+            
+# Testing function
+# clean_data <- get_clean_data(wide_data)  
   
 
-# Need to go to Qualtrics' and find the condition
+# Notes
 ## Remember to ADD condition info to updated study on Human Subjects Pool!!!! Embedded conditon info
+## Discuss political manipulation check q for loss targ with Sara
 
 
