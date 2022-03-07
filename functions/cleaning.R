@@ -23,7 +23,7 @@ library(lubridate)
 
 # This data has been manually reviewed for completion of PT task; filter will be applied at end of this .R document
 # Some variables were removed from the original document in order to prevent identifiable data from being uploaded online: LocationLatitude, LocationLongitude, prolificID_typed
-wide_data <- import("pilot_raw_removed4.csv")
+# wide_data <- import(data/"pilot_raw_removed4.csv")
 
 get_clean_data <- function(wide_df){
   wide_df %>% 
@@ -160,7 +160,8 @@ get_clean_data <- function(wide_df){
                                      condition == "control_targ" & manip_check_profess == "Jen is a teacher" ~ "Correct",
                                      condition == "control_targ" & manip_check_profess == "No information" ~ "Incorrect",
                                      condition == "control_targ" & manip_check_profess == "Don't remember" ~ "Incorrect")) %>% 
-  filter(q_check_politics != "Incorrect" & q_check_covid == "Correct" & q_check_profess == "Correct")
+  filter(q_check_politics != "Incorrect" & q_check_covid == "Correct" & q_check_profess == "Correct") %>% 
+    filter(jen_check == "Jen")
 }
             
 # Testing function

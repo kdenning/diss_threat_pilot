@@ -1,0 +1,217 @@
+---
+title: "Pilot Analyses"
+output: 
+    html_document:
+      code_download: TRUE
+      toc: TRUE
+      toc_float:
+        collapsed: FALSE
+      toc_depth: 1
+      code_folding: hide
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r data prep, echo = FALSE, warning = FALSE, message = FALSE, error = FALSE}
+# Loading packages
+library(psych)
+# library(sjPlot)
+library(effects)
+library(magrittr)
+library(parameters)
+library(dplyr)
+library(tidyr)
+library(rio)
+library(ggplot2)
+
+# Function to clean document
+source("functions/cleaning.R")
+source("functions/demographics counts.R")
+
+# Setting global chunk options
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE)
+
+options(scipen = 999)
+
+# Importing data
+wide_raw <- import("data/pilot_raw_removed4.csv") 
+
+# Cleaning data using function
+clean_data <- get_clean_data(wide_raw)
+```
+
+# Descriptives {.tabset .tabset-fade .tabset-pills}
+
+## Overall
+
+```{r}
+psych::describe(clean_data)
+```
+
+## Sample size
+
+```{r}
+clean_data %>% 
+  select(subid) %>% 
+  unique() %>% 
+  nrow()
+```
+
+### Per condition
+
+```{r}
+clean_data %>% 
+  select(subid, condition) %>% 
+  unique() %>% 
+  group_by(condition) %>% 
+  count()
+```
+
+A lot were removed from the competitive target in comparison to the other conditions.
+
+## Histograms
+
+### Distance in coffee shop
+
+```{r}
+hist(clean_data$distance_coffee)
+````
+
+Seat E is option "5," or the farthest seat away. It is right-skewed to this option. Maybe I should look at this as categorical with a boxplot, since the distance is not even? This may affect combining into one measure with the others...
+
+### Distance in town
+
+```{r}
+hist(clean_data$distance_town)
+````
+
+Skewed left (not as far of a distance), kind of plateaus at option 5. Again, maybe should make categorical?
+
+### Realistic threat
+
+```{r}
+hist(clean_data$realistic_q)
+````
+
+Right-skewed, with 4 = "Extremely threatening." I don't think this is concerning because it shows people are experiencing more threat overall and we had more threatening conditions than not.
+
+### Symbolic threat
+
+```{r}
+hist(clean_data$symbolic_q)
+````
+
+Right-skewed, same as with realistic threat above.
+
+### Explicit threat posed by target
+
+```{r}
+hist(clean_data$explicit_targ)
+````
+
+No 3's? Seems like something may have been coded werid... Looks evenly spread out.
+
+### Explicit threat posed by political out-group 
+
+```{r}
+hist(clean_data$explicit_group)
+````
+
+Right-skewed, still doing the weird thing with the 3. Seems people are more willing to discuss explicit threat of the group than the individual.
+
+### Political orientation
+
+#### Overall
+
+```{r}
+hist(clean_data$pol_orient_1)
+````
+
+Left-skewed, not suprising as filtered for liberals and 1 = "extremely liberal"
+
+#### Social 
+
+```{r}
+hist(clean_data$pol_orient_2)
+````
+
+Left-skewed, still not surprised for the same reasons.
+
+#### Economic
+
+```{r}
+hist(clean_data$pol_orient_3)
+````
+
+Left-skewed
+
+# Demographics {.tabset .tabset-fade .tabset-pills}
+
+## Age
+
+```{r}
+clean_data %>%
+  select(subid, age) %>% 
+  na.omit() %>% 
+  summarize(mean = mean(age),
+            sd = sd(age))
+```
+
+## Gender
+
+```{r}
+gender_counts <- clean_data %>% 
+  select(subid, gender) %>%  
+  na.omit() %>% 
+  unique() %>% 
+  group_by(gender) %>% 
+  count()
+
+dem_percent_table(gender_counts)
+```
+
+Everyone responded to this question (211 when you add it up)
+
+## Race/Ethnicity
+
+```{r}
+ethnicity_counts <- clean_data %>% 
+  select(subid, race) %>%  
+  na.omit() %>% 
+  unique() %>% 
+  group_by(race) %>% 
+  count()
+
+dem_percent_table(ethnicity_counts)
+```
+
+Everyone also responded to this question
+
+## Education - Participant
+
+```{r}
+edu_counts <- clean_data %>% 
+  select(subid, education) %>%  
+  na.omit() %>% 
+  unique() %>% 
+  group_by(education) %>% 
+  count()
+
+dem_percent_table(edu_counts)
+```
+
+## Education - Parents
+
+```{r}
+edu_parent_counts <- clean_data %>% 
+  select(subid, education) %>%  
+  na.omit() %>% 
+  unique() %>% 
+  group_by(education) %>% 
+  count()
+
+dem_percent_table(edu_parent_counts)
+```
+
