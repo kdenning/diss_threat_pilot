@@ -23,6 +23,8 @@ library(dplyr)
 library(tidyr)
 library(rio)
 library(ggplot2)
+library(corrplot)
+library(factoextra)
 
 # Function to clean document
 source("functions/cleaning.R")
@@ -274,4 +276,115 @@ clean_data %>%
 
 Everyone has spoken for almost 20 years or more, so doesn't seem like we need to filter anyone out.
 
-# EFA
+# Scale validation {.tabset .tabset-fade .tabset-pills}
+
+## Correlation matrix
+
+```{r}
+# Getting only the variables in order to do an EFA
+efa_data <- clean_data %>% 
+  select(distance_coffee, distance_town, realistic_q, symbolic_q)
+
+cor_matrix <- cor(efa_data)
+cor_matrix
+
+corrplot(cor_matrix, method = "number")
+```
+
+## EFA
+
+### Can an EFA be run? 
+
+```{r EFA check}
+# Check factor structure to see if there is enough correlation, etc. for factor analysis
+check_factorstructure(efa_data)
+```
+
+### What number of factors are advisable?
+
+```{r EFA n factor check}
+# What is the most recommended number of EFA factors?
+factors_exp <- n_factors(efa_data)
+factors_exp
+
+# How many factors are supported by what number of methods?
+summary(factors_exp)
+```
+
+It appears that 1 factor - as we had planned - is most advisable!
+
+### 1 Factor EFA
+
+```{r EFA 1 fac}
+efa_1fac <- psych::fa(efa_data, nfactors = 1) %>% 
+  model_parameters(sort = TRUE, threshold = "max")
+efa_1fac
+```
+
+With the correlations not being as high for the distance measures and their respective factor loadings also being low on the one factor EFA, I am going to do a PCA and Scree Plot to see if the best factor should be reduced.
+
+## PCA & Scree Plot
+
+## PCA results
+
+```{r}
+pca_results <- prcomp(efa_data, scale = TRUE)
+pca_results
+
+eig.val <- get_eigenvalue(pca_results)
+eig.val # Only dimension one has an eigenvalue over 1, but Dim 2 rounds to 1. Together they explain 76 % of the variance
+  
+# Results for Variables
+res.var <- get_pca_var(pca_results)
+res.var$coord          # Coordinates
+res.var$contrib        # Contributions to the PCs
+res.var$cos2           # Quality of representation 
+```
+
+The scaling option uses the variable standard deviations. When eigenvalues are obtained, Dimension 1 has an Eigenvalue over 1 and Dimension 2 has an eigenvalue equal to 1 when rounded. When looking at the contributions, it appears that Dimension 1 is explained by symbolic threat, realistic trheat, and distance in the coffee shop. Dimension 2 is mostly explained by distance in town and a little by distance in the coffee shop.
+
+## Scree plot
+
+```{r}
+fviz_eig(pca_results)
+```
+
+Using eigenvalues to show percentage of variances explained by each component. 50% is explained by component 1, with a sharp dropoff occurring after component 1.
+
+## Graph of variable correlations
+
+```{r}
+fviz_pca_var(pca_results,
+             col.var = "contrib", # Color by contributions to the PC
+             gradient.cols = c("cornflowerblue", "darkolivegreen3", "blueviolet"),
+             repel = TRUE     # Avoid text overlapping
+             )
+```
+
+Positively correlated variables point to the same side, while negatively correlated point to the other side. It shows the two different component dimensions that explain the most of the variance. Based on previous correlations and this visualization, nothing is negatively correlated, but some have weak correlations.
+
+## Cronbach's alpha
+
+### Alpha with 4 variables
+
+```{r}
+psych::alpha(efa_data)
+```
+
+Not at an acceptable reliability level
+
+### Alpha with 3 variables
+
+```{r}
+efa_3 <- efa_data %>% 
+  select(-distance_town)
+
+psych::alpha(efa_3)
+```
+
+At an acceptable reliability level
+
+## Current Thoughts
+
+I think we need to drop the distance in town question, as it isn't reliable. We can have a one factor measure of implicit threat using symbolic threat, realistic threat, and distance in coffee shop. 
+
