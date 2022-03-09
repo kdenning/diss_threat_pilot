@@ -49,7 +49,8 @@ clean_data <- get_clean_data(wide_raw)
 ## Overall
 
 ```{r}
-psych::describe(clean_data)
+descrip_overall <- psych::describe(clean_data)
+descrip_overall
 ```
 
 ## Sample size
@@ -81,7 +82,22 @@ A lot were removed from the competitive target in comparison to the other condit
 hist(clean_data$distance_coffee)
 ````
 
-Seat E is option "5," or the farthest seat away. It is right-skewed to this option. Maybe I should look at this as categorical with a boxplot, since the distance is not even? This may affect combining into one measure with the others...
+Seat E is option "5," or the farthest seat away. It is right-skewed to this option.
+
+#### Is the skew non-normal?
+
+```{r}
+se_skew <- sqrt((6*211*(211-1))/((211-2)*(211+1)*(211+3)))
+z_coffee <- descrip_overall$skew[13]/se_skew
+z_coffee
+```
+
+According to Kim (2013; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3591587/), a sample of 50 < n < 300 with an absolute z-score of >3.29 is non-normal. This z-score of -2.42 is less than 3.29, making the skew normal. 
+
+Formula used for se of skew:
+se_skew = sqrt(6*N*(N-1) / ((N-2)*(N+1)*(N+3)))
+
+https://www.ibm.com/support/pages/standard-errors-skewness-and-kurtosis-are-all-same-set-variables
 
 ### Distance in town
 
@@ -89,7 +105,16 @@ Seat E is option "5," or the farthest seat away. It is right-skewed to this opti
 hist(clean_data$distance_town)
 ````
 
-Skewed left (not as far of a distance), kind of plateaus at option 5. Again, maybe should make categorical?
+Skewed left (not as far of a distance), kind of plateaus at option 5.
+
+#### Is the skew normal?
+
+```{r}
+z_town <- descrip_overall$skew[14]/se_skew
+z_town
+```
+
+Using the same criteria as above (under histogram for distance from town), this is still normal skew.
 
 ### Realistic threat
 
@@ -99,6 +124,15 @@ hist(clean_data$realistic_q)
 
 Right-skewed, with 4 = "Extremely threatening." I don't think this is concerning because it shows people are experiencing more threat overall and we had more threatening conditions than not.
 
+#### Is the skew normal?
+
+```{r}
+z_realistic <- descrip_overall$skew[15]/se_skew
+z_realistic
+```
+
+Using the same criteria as above (under histogram for distance from town), this is still normal skew.
+
 ### Symbolic threat
 
 ```{r}
@@ -107,13 +141,22 @@ hist(clean_data$symbolic_q)
 
 Right-skewed, same as with realistic threat above.
 
+#### Is the skew normal?
+
+```{r}
+z_symbolic <- descrip_overall$skew[16]/se_skew
+z_symbolic
+```
+
+Using the same criteria as above (under histogram for distance from town), this is still normal skew.
+
 ### Explicit threat posed by target
 
 ```{r}
 hist(clean_data$explicit_targ)
 ````
 
-No 3's? Seems like something may have been coded werid... Looks evenly spread out.
+Looks evenly spread out.
 
 ### Explicit threat posed by political out-group 
 
@@ -121,7 +164,27 @@ No 3's? Seems like something may have been coded werid... Looks evenly spread ou
 hist(clean_data$explicit_group)
 ````
 
-Right-skewed, still doing the weird thing with the 3. Seems people are more willing to discuss explicit threat of the group than the individual.
+Left/negative skew. Seems people are more willing to discuss explicit threat of the group than the individual.
+
+#### Is the skew normal?
+
+```{r}
+z_group <- descrip_overall$skew[18]/se_skew
+z_group
+```
+
+This skew IS non-normal. Seems to be only moderately skewed, so going to start with a log transformation.
+
+#### Fixing skew
+
+```{r}
+clean_data <- clean_data %>% 
+  mutate(explicit_group_log = log10(max(explicit_group + 1)- explicit_group))
+
+skew(clean_data$explicit_group_log)/se_skew
+```
+
+Z score is now below cut-off for transformed variable.
 
 ### Political orientation
 
@@ -131,7 +194,27 @@ Right-skewed, still doing the weird thing with the 3. Seems people are more will
 hist(clean_data$pol_orient_1)
 ````
 
-Left-skewed, not suprising as filtered for liberals and 1 = "extremely liberal"
+Right/positive-skewed, not surprising as filtered for liberals and 1 = "extremely liberal"
+
+#### Is the skew normal?
+
+```{r}
+z_polorient1 <- descrip_overall$skew[19]/se_skew
+z_polorient1
+```
+
+Skew is non-normal.
+
+##### Fixing skew
+
+```{r}
+clean_data <- clean_data %>% 
+  mutate(pol_orient_1_log = log10(pol_orient_1))
+
+skew(clean_data$pol_orient_1_log)/se_skew
+```
+
+Now the skew is normal.
 
 #### Social 
 
@@ -139,7 +222,34 @@ Left-skewed, not suprising as filtered for liberals and 1 = "extremely liberal"
 hist(clean_data$pol_orient_2)
 ````
 
-Left-skewed, still not surprised for the same reasons.
+Right/positive-skewed, still not surprised for the same reasons.
+
+#### Is the skew normal?
+
+```{r}
+z_polorient2 <- descrip_overall$skew[20]/se_skew
+z_polorient2
+```
+
+Skew is non-normal.
+
+#### Fixing skew
+
+```{r}
+clean_data <- clean_data %>% 
+  mutate(pol_orient_2_log = log10(pol_orient_2))
+
+z_polorient2_log <- skew(clean_data$pol_orient_2_log)/se_skew
+z_polorient2_log
+
+clean_data <- clean_data %>% 
+  mutate(pol_orient_2_inv = 1/(pol_orient_2))
+
+z_polorient2_inv <- skew(clean_data$pol_orient_2_inv)/se_skew
+z_polorient2_inv
+```
+
+The z-score with the log is still non-normal. Used inverse for severe skew, which is now normal.
 
 #### Economic
 
@@ -147,7 +257,27 @@ Left-skewed, still not surprised for the same reasons.
 hist(clean_data$pol_orient_3)
 ````
 
-Left-skewed
+Right/positive-skewed
+
+#### Is the skew normal?
+
+```{r}
+z_polorient3 <- descrip_overall$skew[21]/se_skew
+z_polorient3
+```
+
+Skew is non-normal.
+
+#### Fixing skew
+
+```{r}
+clean_data <- clean_data %>% 
+  mutate(pol_orient_3_log = log10(pol_orient_3))
+
+skew(clean_data$pol_orient_3_log)/se_skew
+```
+
+Skew is now normal.
 
 # Demographics {.tabset .tabset-fade .tabset-pills}
 
