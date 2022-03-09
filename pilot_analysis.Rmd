@@ -532,3 +532,44 @@ corrplot(cor_matrix_all, method = "number")
 ```
 
 Should all of the variables be transformed to the same scale for reliable comparison? With the high correlations of explicit threat, it seems like it could be interesting to explore a scale with those and symbolic and realistic threat. Either way, our measures of symbolic and realistic threat are validated, as with the distance coffee measure having minor a minor correlation.
+
+# ANOVA: Conditions prediciting threat
+
+## Implicit threat
+
+Currently using a composite of the three measures supported by my EFA/PCA analyses above: realistic threat, symbolic threat, and distance in coffee shop. Distance in town is not used. Since they are on different scales, converting to z-scores for the composite measure.
+
+### Coverting variables to z-scores and composite measure
+
+```{r}
+comp1 <- clean_data %>% 
+  mutate(realistic_z = (realistic_q - mean(realistic_q))/sd(realistic_q),
+         symbolic_z = (symbolic_q - mean(symbolic_q))/sd(symbolic_q),
+         coffee_z = (distance_coffee - mean(distance_coffee))/sd(distance_coffee)) %>%  #or should I use scale and convert them to a 0 to 1 range? )
+  mutate(implicit_threat = rowMeans(select(., c("realistic_z", "symbolic_z", "coffee_z"))))
+
+head(comp1)
+mean(comp1$implicit_threat)
+sd(comp1$implicit_threat)
+```
+
+### ANOVA
+
+#### Summary results
+
+```{r}
+contrasts(comp1$condition)
+results <- aov(implicit_threat ~ condition, data = comp1)
+summary(results)
+```
+
+#### Post-hoc test
+
+```{r}
+TukeyHSD(results)
+```
+
+Control differs from warm targ, covid targ, comp targ, and loss targ
+Loss targ and warm targ also differ from one another
+
+The warm targ and comp targ do not differ (somewhat applicable to Study 1, but not post-hoc or female vs male)

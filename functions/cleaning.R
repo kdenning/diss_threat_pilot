@@ -31,6 +31,12 @@ get_clean_data <- function(wide_df){
   mutate(subid = as.factor(subid), 
          recorded_date = mdy_hm(recorded_date),
          condition = as.factor(condition),
+         condition = fct_relevel(condition, 
+                                 "warm_targ", 
+                                 "control_targ", 
+                                 "covid_targ", 
+                                 "comp_targ", 
+                                 "loss_targ"),
          vote_check = as.factor(dplyr::recode(vote_check,
                                     `1` = "Trump",
                                     `2` = "Biden", # Prolific pre-screen worked and there is only one level of Biden supporters
