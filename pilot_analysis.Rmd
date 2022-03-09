@@ -82,7 +82,7 @@ A lot were removed from the competitive target in comparison to the other condit
 hist(clean_data$distance_coffee)
 ````
 
-Seat E is option "5," or the farthest seat away. It is right-skewed to this option.
+Seat E is option "5," or the farthest seat away. It is left/negative-skewed to this option.
 
 #### Is the skew non-normal?
 
@@ -105,7 +105,7 @@ https://www.ibm.com/support/pages/standard-errors-skewness-and-kurtosis-are-all-
 hist(clean_data$distance_town)
 ````
 
-Skewed left (not as far of a distance), kind of plateaus at option 5.
+Right skewed (not as far of a distance), kind of plateaus at option 5.
 
 #### Is the skew normal?
 
@@ -122,7 +122,7 @@ Using the same criteria as above (under histogram for distance from town), this 
 hist(clean_data$realistic_q)
 ````
 
-Right-skewed, with 4 = "Extremely threatening." I don't think this is concerning because it shows people are experiencing more threat overall and we had more threatening conditions than not.
+Left/negative-skewed, with 4 = "Extremely threatening." I don't think this is concerning because it shows people are experiencing more threat overall and we had more threatening conditions than not.
 
 #### Is the skew normal?
 
@@ -139,7 +139,7 @@ Using the same criteria as above (under histogram for distance from town), this 
 hist(clean_data$symbolic_q)
 ````
 
-Right-skewed, same as with realistic threat above.
+Left/negative-skewed, same as with realistic threat above.
 
 #### Is the skew normal?
 
@@ -518,3 +518,17 @@ At an acceptable reliability level
 
 I think we need to drop the distance in town question, as it isn't reliable. We can have a one factor measure of implicit threat using symbolic threat, realistic threat, and distance in coffee shop. 
 
+# Relationship with explicit threat {.tabset .tabset-fade .tabset-pills}
+
+```{r}
+threat_all <- clean_data %>% 
+  select(distance_coffee, distance_town, realistic_q, symbolic_q, explicit_targ,
+         explicit_group, explicit_group_log)
+
+cor_matrix_all <- cor(threat_all)
+cor_matrix_all
+
+corrplot(cor_matrix_all, method = "number")
+```
+
+Should all of the variables be transformed to the same scale for reliable comparison? With the high correlations of explicit threat, it seems like it could be interesting to explore a scale with those and symbolic and realistic threat. Either way, our measures of symbolic and realistic threat are validated, as with the distance coffee measure having minor a minor correlation.
