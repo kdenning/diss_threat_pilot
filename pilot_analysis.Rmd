@@ -425,6 +425,22 @@ mean(comp1$implicit_threat)
 sd(comp1$implicit_threat)
 ```
 
+### Mean/SD
+
+```{r}
+comp1 %>% 
+  select(condition, implicit_threat) %>% 
+  unique() %>% 
+  group_by(condition) %>% 
+  summarize(mean = mean(implicit_threat),
+         sd = sd(implicit_threat))
+
+range(comp1$implicit_threat)
+```
+
+Even though the scale is standardized, lower scores indicate less threat and higher schores indicate higher threat. Mean implicit threat = 0. The loss target is high threat, control threat is least threat.
+
+
 ### ANOVA
 
 #### Summary results
