@@ -15,7 +15,6 @@ editor_options:
 ```{r data prep, echo = FALSE, warning = FALSE, message = FALSE, error = FALSE}
 # Loading packages
 library(psych)
-# library(sjPlot)
 library(effects)
 library(magrittr)
 library(parameters)
@@ -25,6 +24,7 @@ library(rio)
 library(ggplot2)
 library(corrplot)
 library(factoextra)
+library(emmeans)
 
 # Function to clean document
 source("functions/cleaning.R")
@@ -98,22 +98,15 @@ se_skew = sqrt(6*N*(N-1) / ((N-2)*(N+1)*(N+3)))
 
 https://www.ibm.com/support/pages/standard-errors-skewness-and-kurtosis-are-all-same-set-variables
 
+Committee member (Sara W) also informed me that unless I was missing responses for one answer entirely on one side, the skew is not something to be concerned about. I am keeping this test here as a reference for future, but am removing other z tests for skew below because none meet the observational skew test Sara suggested.
+
 ### Distance in town
 
 ```{r}
 hist(clean_data$distance_town)
 ````
 
-Right skewed (not as far of a distance), kind of plateaus at option 5.
-
-#### Is the skew normal?
-
-```{r}
-z_town <- descrip_overall$skew[14]/se_skew
-z_town
-```
-
-Using the same criteria as above (under histogram for distance from town), this is still normal skew.
+Right skewed (not as far of a distance), kind of plateaus at option 5. Still normal skew.
 
 ### Realistic threat
 
@@ -121,16 +114,7 @@ Using the same criteria as above (under histogram for distance from town), this 
 hist(clean_data$realistic_q)
 ````
 
-Left/negative-skewed, with 4 = "Extremely threatening." I don't think this is concerning because it shows people are experiencing more threat overall and we had more threatening conditions than not.
-
-#### Is the skew normal?
-
-```{r}
-z_realistic <- descrip_overall$skew[15]/se_skew
-z_realistic
-```
-
-Using the same criteria as above (under histogram for distance from town), this is still normal skew.
+Left/negative-skewed, with 4 = "Extremely threatening." I don't think this is concerning because it shows people are experiencing more threat overall and we had more threatening conditions than not. Skew is normal.
 
 ### Symbolic threat
 
@@ -138,16 +122,7 @@ Using the same criteria as above (under histogram for distance from town), this 
 hist(clean_data$symbolic_q)
 ````
 
-Left/negative-skewed, same as with realistic threat above.
-
-#### Is the skew normal?
-
-```{r}
-z_symbolic <- descrip_overall$skew[16]/se_skew
-z_symbolic
-```
-
-Using the same criteria as above (under histogram for distance from town), this is still normal skew.
+Left/negative-skewed, same as with realistic threat above. Skew is normal.
 
 ### Explicit threat posed by target
 
@@ -163,27 +138,7 @@ Looks evenly spread out.
 hist(clean_data$explicit_group)
 ````
 
-Left/negative skew. Seems people are more willing to discuss explicit threat of the group than the individual.
-
-#### Is the skew normal?
-
-```{r}
-z_group <- descrip_overall$skew[18]/se_skew
-z_group
-```
-
-This skew IS non-normal. Seems to be only moderately skewed, so going to start with a log transformation.
-
-#### Fixing skew
-
-```{r}
-clean_data <- clean_data %>% 
-  mutate(explicit_group_log = log10(max(explicit_group + 1)- explicit_group))
-
-skew(clean_data$explicit_group_log)/se_skew
-```
-
-Z score is now below cut-off for transformed variable.
+Left/negative skew. Seems people are more willing to discuss explicit threat of the group than the individual. Skew is normal.
 
 ### Political orientation
 
@@ -193,27 +148,7 @@ Z score is now below cut-off for transformed variable.
 hist(clean_data$pol_orient_1)
 ````
 
-Right/positive-skewed, not surprising as filtered for liberals and 1 = "extremely liberal"
-
-#### Is the skew normal?
-
-```{r}
-z_polorient1 <- descrip_overall$skew[19]/se_skew
-z_polorient1
-```
-
-Skew is non-normal.
-
-##### Fixing skew
-
-```{r}
-clean_data <- clean_data %>% 
-  mutate(pol_orient_1_log = log10(pol_orient_1))
-
-skew(clean_data$pol_orient_1_log)/se_skew
-```
-
-Now the skew is normal.
+Right/positive-skewed, not surprising as filtered for liberals and 1 = "extremely liberal." Skew is normal.
 
 #### Social 
 
@@ -221,34 +156,7 @@ Now the skew is normal.
 hist(clean_data$pol_orient_2)
 ````
 
-Right/positive-skewed, still not surprised for the same reasons.
-
-#### Is the skew normal?
-
-```{r}
-z_polorient2 <- descrip_overall$skew[20]/se_skew
-z_polorient2
-```
-
-Skew is non-normal.
-
-#### Fixing skew
-
-```{r}
-clean_data <- clean_data %>% 
-  mutate(pol_orient_2_log = log10(pol_orient_2))
-
-z_polorient2_log <- skew(clean_data$pol_orient_2_log)/se_skew
-z_polorient2_log
-
-clean_data <- clean_data %>% 
-  mutate(pol_orient_2_inv = 1/(pol_orient_2))
-
-z_polorient2_inv <- skew(clean_data$pol_orient_2_inv)/se_skew
-z_polorient2_inv
-```
-
-The z-score with the log is still non-normal. Used inverse for severe skew, which is now normal.
+Right/positive-skewed, still not surprised for the same reasons. Skew is normal.
 
 #### Economic
 
@@ -256,27 +164,7 @@ The z-score with the log is still non-normal. Used inverse for severe skew, whic
 hist(clean_data$pol_orient_3)
 ````
 
-Right/positive-skewed
-
-#### Is the skew normal?
-
-```{r}
-z_polorient3 <- descrip_overall$skew[21]/se_skew
-z_polorient3
-```
-
-Skew is non-normal.
-
-#### Fixing skew
-
-```{r}
-clean_data <- clean_data %>% 
-  mutate(pol_orient_3_log = log10(pol_orient_3))
-
-skew(clean_data$pol_orient_3_log)/se_skew
-```
-
-Skew is now normal.
+Right/positive-skewed. Skew is normal.
 
 # Scale validation {.tabset .tabset-fade .tabset-pills}
 
@@ -311,91 +199,56 @@ factors_exp
 
 # How many factors are supported by what number of methods?
 summary(factors_exp)
+
+nfactors(efa_data)
 ```
 
-It appears that 1 factor - as we had planned - is most advisable!
+It appears that 1 factor (as we planned) or maybe 2 factors are most advisable!
 
 ### 1 Factor EFA
 
 ```{r EFA 1 fac}
-efa_1fac <- psych::fa(efa_data, nfactors = 1) %>% 
+efa_1fac <- psych::fa(efa_data, nfactors = 1)
+
+efa_1fac %>% 
   model_parameters(sort = TRUE, threshold = "max")
-efa_1fac
 ```
 
-With the correlations not being as high for the distance measures and their respective factor loadings also being low on the one factor EFA, I am going to do a PCA and Scree Plot to see if the best factor should be reduced.
-
-## PCA & Scree Plot
-
-## PCA results
-
-```{r}
-pca_results <- prcomp(efa_data, scale = TRUE)
-pca_results
-
-eig.val <- get_eigenvalue(pca_results)
-eig.val # Only dimension one has an eigenvalue over 1, but Dim 2 rounds to 1. Together they explain 76 % of the variance
-  
-# Results for Variables
-res.var <- get_pca_var(pca_results)
-res.var$coord          # Coordinates
-res.var$contrib        # Contributions to the PCs
-res.var$cos2           # Quality of representation 
-```
-
-The scaling option uses the variable standard deviations. When eigenvalues are obtained, Dimension 1 has an Eigenvalue over 1 and Dimension 2 has an eigenvalue equal to 1 when rounded. When looking at the contributions, it appears that Dimension 1 is explained by symbolic threat, realistic trheat, and distance in the coffee shop. Dimension 2 is mostly explained by distance in town and a little by distance in the coffee shop.
-
-## Scree plot
-
-```{r}
-fviz_eig(pca_results)
-```
-
-Using eigenvalues to show percentage of variances explained by each component. 50% is explained by component 1, with a sharp dropoff occurring after component 1.
-
-## Graph of variable correlations
-
-```{r}
-fviz_pca_var(pca_results,
-             col.var = "contrib", # Color by contributions to the PC
-             gradient.cols = c("cornflowerblue", "darkolivegreen3", "blueviolet"),
-             repel = TRUE     # Avoid text overlapping
-             )
-```
-
-Positively correlated variables point to the same side, while negatively correlated point to the other side. It shows the two different component dimensions that explain the most of the variance. Based on previous correlations and this visualization, nothing is negatively correlated, but some have weak correlations.
+With the correlations not being as high for the distance measures and their respective factor loadings also being low on the one factor EFA, it appears that 1 factor with just realistic and symbolic threat is most advisable. The distance measures will be explored separately.
 
 ## Cronbach's alpha
 
-### Alpha with 4 variables
+### Alpha with realistic and symbolic
 
 ```{r}
-psych::alpha(efa_data)
+efa_itt <- efa_data %>% 
+  select(-distance_town, -distance_coffee)
+
+psych::alpha(efa_itt)
 ```
 
-Not at an acceptable reliability level
-
-### Alpha with 3 variables
+Intergroup threat theory (realistic and symbolic threat) measures are highly reliable, which is consistent with correlations and EFA results.
 
 ```{r}
-efa_3 <- efa_data %>% 
-  select(-distance_town)
+efa_distance <- efa_data %>% 
+  select(distance_town,  distance_coffee)
 
-psych::alpha(efa_3)
+psych::alpha(efa_distance)
 ```
 
-At an acceptable reliability level
+Distance measures not realiable together, which seems consistent with EFA results. They represent two separate factors. They will each need to be tested individually.
 
 ## Current Thoughts
 
-I think we need to drop the distance in town question, as it isn't reliable. We can have a one factor measure of implicit threat using symbolic threat, realistic threat, and distance in coffee shop. 
+- Primary measure of threat will be a composite (average) of realistic and symbolic threat
+- All analyses will also be predicted by distance measures to see how they vary; same goes for explicit threat measures
 
 # Relationship with explicit threat {.tabset .tabset-fade .tabset-pills}
 
 ```{r}
 threat_all <- clean_data %>% 
   select(distance_coffee, distance_town, realistic_q, symbolic_q, explicit_targ,
-         explicit_group, explicit_group_log)
+         explicit_group)
 
 cor_matrix_all <- cor(threat_all)
 cor_matrix_all
@@ -403,61 +256,180 @@ cor_matrix_all
 corrplot(cor_matrix_all, method = "number")
 ```
 
-Should all of the variables be transformed to the same scale for reliable comparison? With the high correlations of explicit threat, it seems like it could be interesting to explore a scale with those and symbolic and realistic threat. Either way, our measures of symbolic and realistic threat are validated, as with the distance coffee measure having minor a minor correlation.
+The high correlations with explicit threat, though not expected, validate our measures of symbolic and realistic threat.
 
-# ANOVA: Conditions prediciting threat
+# ANOVA: Conditions prediciting threat {.tabset .tabset-fade .tabset-pills}
 
-## Implicit threat
+## Implicit threat: Realistic and Symbolic
 
-Currently using a composite of the three measures supported by my EFA/PCA analyses above: realistic threat, symbolic threat, and distance in coffee shop. Distance in town is not used. Since they are on different scales, converting to z-scores for the composite measure.
-
-### Coverting variables to z-scores and composite measure
+Currently using a composite supported by my EFA above, combining realistic threat, and symbolic threat. 
 
 ```{r}
-comp1 <- clean_data %>% 
-  mutate(realistic_z = (realistic_q - mean(realistic_q))/sd(realistic_q),
-         symbolic_z = (symbolic_q - mean(symbolic_q))/sd(symbolic_q),
-         coffee_z = (distance_coffee - mean(distance_coffee))/sd(distance_coffee)) %>%  #or should I use scale and convert them to a 0 to 1 range? )
-  mutate(implicit_threat = rowMeans(select(., c("realistic_z", "symbolic_z", "coffee_z"))))
-
-head(comp1)
-mean(comp1$implicit_threat)
-sd(comp1$implicit_threat)
+clean_data %<>%   
+  mutate(itt_comp = rowMeans(select(., c("realistic_q", "symbolic_q"))))
 ```
 
-### Mean/SD
+### Mean
 
 ```{r}
-comp1 %>% 
-  select(condition, implicit_threat) %>% 
+mean(clean_data$itt_comp)
+```
+
+### SD
+
+```{r}
+sd(clean_data$itt_comp)
+```
+
+### Range
+
+```{r}
+range(clean_data$itt_comp)
+```
+
+### Composite descriptives
+
+```{r}
+clean_data %>% 
+  select(condition, itt_comp) %>% 
   unique() %>% 
   group_by(condition) %>% 
-  summarize(mean = mean(implicit_threat),
-         sd = sd(implicit_threat))
-
-range(comp1$implicit_threat)
+  summarize(mean = mean(itt_comp),
+         sd = sd(itt_comp))
 ```
 
-Even though the scale is standardized, lower scores indicate less threat and higher schores indicate higher threat. Mean implicit threat = 0. The loss target is high threat, control threat is least threat.
-
+Lower scores indicate less threat and higher scores indicate higher threat.
 
 ### ANOVA
 
 #### Summary results
 
 ```{r}
-contrasts(comp1$condition)
-results <- aov(implicit_threat ~ condition, data = comp1)
+contrasts(clean_data$condition)
+results <- aov(itt_comp ~ condition, data = clean_data)
 summary(results)
 ```
 
 #### Post-hoc test
 
 ```{r}
-TukeyHSD(results)
+emmeans(results, pairwise ~ condition)
 ```
 
 Control differs from warm targ, covid targ, comp targ, and loss targ
 Loss targ and warm targ also differ from one another
 
 The warm targ and comp targ do not differ (somewhat applicable to Study 1, but not post-hoc or female vs male)
+
+## Distance coffee
+
+### ANOVA
+
+#### Summary results
+
+```{r}
+results_coffee <- aov(distance_coffee ~ condition, data = clean_data)
+summary(results_coffee)
+```
+
+#### Marginal means & pairwise
+
+```{r}
+emmeans(results_coffee, pairwise ~ condition)
+```
+
+Loss and covid differ from control; loss also differs from warm; warm and control did not differ
+
+## Distance town
+
+### ANOVA
+
+#### Summary results
+
+```{r}
+results_town <- aov(distance_town ~ condition, data = clean_data)
+summary(results_town)
+```
+
+#### Marginal means & pairwise
+
+```{r}
+emmeans(results_town, pairwise ~ condition)
+```
+
+Control and covid target and control and warm target were the only ones that significantly differed. The covid target is interesting, it may be that we anticipate different states to have different responses. Also, the fact that the warm target is the highest is also surprising. Something about this measure seems inconsistent with the others.
+
+# Explicit measures {.tabset .tabset-fade .tabset-pills}
+
+## EFA
+
+```{r}
+explicit_2 <- clean_data %>% 
+  select(explicit_targ, explicit_group)
+
+explicit_1fac <- psych::fa(explicit_2, nfactors = 1)
+
+explicit_1fac %>% 
+  model_parameters(sort = TRUE, threshold = "max")
+```
+
+### Alpha
+
+```{r}
+psych::alpha(explicit_2)
+```
+
+## Descriptives
+
+### Composite explicit measure
+
+```{r}
+clean_data %<>%   
+  mutate(explicit_comp = rowMeans(select(., c("explicit_targ", "explicit_group"))))
+```
+
+#### Mean
+
+```{r}
+mean(clean_data$explicit_comp)
+```
+
+#### SD
+
+```{r}
+sd(clean_data$explicit_comp)
+```
+
+#### Range
+
+```{r}
+range(clean_data$explicit_comp)
+```
+
+### Correlation with ITT composite
+
+```{r}
+cor_threat_comps <- clean_data %>% 
+  select(itt_comp, explicit_comp)
+
+cor(cor_threat_comps)
+```
+
+Explicit threat and ITT measures are highly correlated. This provides additional validation.
+
+## ANOVA
+
+#### Summary results
+
+```{r}
+results_explicit <- aov(explicit_comp ~ condition, data = clean_data)
+summary(results_explicit)
+```
+
+#### Marginal means & pairwise
+
+```{r}
+emmeans(results_explicit, pairwise ~ condition)
+```
+
+As with the ITT measure, warm and the control differ, warm and loss differ, and loss and control differ. The control also differs from the covid target and comp target. The warm and comp target do not differ. Basically identical to the ITT results, providing extra validation.
