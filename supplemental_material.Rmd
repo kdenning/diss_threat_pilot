@@ -1,0 +1,167 @@
+---
+title: "Supplemental Material"
+output: 
+    html_document:
+      code_download: TRUE
+      toc: TRUE
+      toc_float:
+        collapsed: FALSE
+      toc_depth: 1
+      code_folding: hide
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r data prep, echo = FALSE, warning = FALSE, message = FALSE, error = FALSE}
+# Loading packages
+library(psych)
+library(effects)
+library(magrittr)
+library(parameters)
+library(dplyr)
+library(tidyr)
+library(rio)
+library(ggplot2)
+library(corrplot)
+library(factoextra)
+library(emmeans)
+
+# Function to clean document
+source("functions/cleaning.R")
+
+# Setting global chunk options
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE)
+
+options(scipen = 999)
+
+# Importing data
+wide_raw <- import("data/pilot_raw_removed4.csv") 
+
+# Cleaning data using function
+clean_data <- get_clean_data(wide_raw)
+```
+
+# Checking if those whose answered loss targ manipulation check unexpectedly changes results (not necessarily wrong)
+
+The narrative was talking about 2024, and implied the participant voted for Trump in 2020 without explicitly stating it. Some people said answered yes the target did, but others did not state they did for the manipulation check. Changes to the results could, however, be due to power if the patterns look the same.
+
+## Correlation
+
+```{r}
+data_mancheck <- clean_data %>% 
+  mutate(q_check_politics = as.factor(q_check_politics)) %>% 
+  filter(q_check_politics != "Somewhat correct") %>% 
+  select(distance_coffee, distance_town, realistic_q, symbolic_q)
+
+cor_mancheck <- cor(data_mancheck)
+cor_mancheck
+```
+
+## EFA
+
+```{r}
+efa_mancheck_1fac <- psych::fa(data_mancheck, nfactors = 1)
+
+efa_mancheck_1fac %>% 
+  model_parameters(sort = TRUE, threshold = "max")
+```
+
+Pattern is still same to the original data, with coffee and distance having even less of a relationship.
+
+### ANOVA
+
+```{r}
+data_mancheck_anova <- clean_data %>% 
+  mutate(q_check_politics = as.factor(q_check_politics)) %>% 
+  filter(q_check_politics != "Somewhat correct") %>% 
+  mutate(itt_comp = rowMeans(select(., c("realistic_q", "symbolic_q"))))
+```
+
+#### Summary results
+
+```{r}
+contrasts(data_mancheck_anova$condition)
+results_mancheck <- aov(itt_comp ~ condition, data = data_mancheck_anova)
+summary(results_mancheck)
+```
+
+#### Post-hoc test
+
+```{r}
+emmeans(results_mancheck, pairwise ~ condition)
+```
+
+Pattern is the same as when these participants are included, but the loss versus warm target is only marginally significantly different now. Possibly due to removing 14 participants in one condition.
+
+# Checking if expats affect results
+
+Initially did not filter that they had to live in the U.S. and had a few expats participate. 
+
+## Correlation
+
+```{r}
+data_expat <- clean_data %>% 
+  filter(!subid %in% c("2", "3", "8", "9", "10", "11")) %>% 
+  select(distance_coffee, distance_town, realistic_q, symbolic_q)
+
+cor_expat <- cor(data_expat)
+cor_expat
+```
+
+Looks roughly the same
+
+## EFA
+
+```{r}
+efa_expat_1fac <- psych::fa(data_expat, nfactors = 1)
+
+efa_expat_1fac %>% 
+  model_parameters(sort = TRUE, threshold = "max")
+```
+
+Pattern is still similar to the original data.
+
+### ANOVA
+
+```{r}
+data_expat_anova <- clean_data %>% 
+  filter(!subid %in% c("2", "3", "8", "9", "10", "11")) %>% 
+  mutate(itt_comp = rowMeans(select(., c("realistic_q", "symbolic_q"))))
+```
+
+#### Summary results
+
+```{r}
+contrasts(data_expat_anova$condition)
+results_expat <- aov(itt_comp ~ condition, data = data_expat_anova)
+summary(results_expat)
+```
+
+#### Post-hoc test
+
+```{r}
+emmeans(results_expat, pairwise ~ condition)
+```
+
+Results are the same
+
+## Distance town
+
+### ANOVA
+
+#### Summary results
+
+```{r}
+results_town_expat <- aov(distance_town ~ condition, data = data_expat_anova)
+summary(results_town_expat)
+```
+
+#### Marginal means & pairwise
+
+```{r}
+emmeans(results_town_expat, pairwise ~ condition)
+```
+
+Ran this model removing expats because I wasn't sure if them being in a different country would affect the results, but they are the same. And these are not the main result anyways.

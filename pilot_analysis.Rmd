@@ -177,8 +177,6 @@ efa_data <- clean_data %>%
 
 cor_matrix <- cor(efa_data)
 cor_matrix
-
-corrplot(cor_matrix, method = "number")
 ```
 
 ## EFA
@@ -236,7 +234,7 @@ efa_distance <- efa_data %>%
 psych::alpha(efa_distance)
 ```
 
-Distance measures not realiable together, which seems consistent with EFA results. They represent two separate factors. They will each need to be tested individually.
+Distance measures not reliable together, which seems consistent with EFA results. They represent two separate factors. They will each need to be tested individually.
 
 ## Current Thoughts
 
@@ -253,7 +251,30 @@ threat_all <- clean_data %>%
 cor_matrix_all <- cor(threat_all)
 cor_matrix_all
 
-corrplot(cor_matrix_all, method = "number")
+cor_plot_all_threat <- corrplot(cor_matrix_all, method = "number")
+
+colnames(cor_plot_all_threat) = rep(c('Distance: Coffee', 
+                                       'Distance: Town',
+                                       'Realistic',
+                                       'Symbolic',
+                                       'Explicit: Target',
+                                       'Explicit: Group'))
+
+rownames(cor_plot_all_threat) = rep(c('Distance: Coffee', 
+                                       'Distance: Town',
+                                       'Realistic',
+                                       'Symbolic',
+                                       'Explicit: Target',
+                                       'Explicit: Group'))
+corrplot(cor_plot_all_threat, 
+         is.corr = TRUE, 
+         #method = "number", 
+         method = 'color',
+         col.lim = c(0, 1),
+         tl.cex = .85,
+         tl.col = 'black',
+         addgrid.col = 'white',
+         addCoef.col = 'grey50')
 ```
 
 The high correlations with explicit threat, though not expected, validate our measures of symbolic and realistic threat.
@@ -287,19 +308,6 @@ sd(clean_data$itt_comp)
 range(clean_data$itt_comp)
 ```
 
-### Composite descriptives
-
-```{r}
-clean_data %>% 
-  select(condition, itt_comp) %>% 
-  unique() %>% 
-  group_by(condition) %>% 
-  summarize(mean = mean(itt_comp),
-         sd = sd(itt_comp))
-```
-
-Lower scores indicate less threat and higher scores indicate higher threat.
-
 ### ANOVA
 
 #### Summary results
@@ -309,6 +317,14 @@ contrasts(clean_data$condition)
 results <- aov(itt_comp ~ condition, data = clean_data)
 summary(results)
 ```
+
+#### Residuals & Heteroscedastisticity
+
+```{r}
+plot(results)
+```
+
+A little weird, but working with categorical variables. The QQ especially suggests some non-normality of residuals, but regression odels are robust to violations of normality and heteroscedastisticity.
 
 #### Post-hoc test
 
@@ -332,6 +348,14 @@ results_coffee <- aov(distance_coffee ~ condition, data = clean_data)
 summary(results_coffee)
 ```
 
+#### Residuals
+
+```{r}
+plot(results_coffee)
+```
+
+Residuals and QQ look a little more normal than wwith the threat composite. Same reasoning here to assume regression is robst to violations.
+
 #### Marginal means & pairwise
 
 ```{r}
@@ -350,6 +374,14 @@ Loss and covid differ from control; loss also differs from warm; warm and contro
 results_town <- aov(distance_town ~ condition, data = clean_data)
 summary(results_town)
 ```
+
+#### Residuals
+
+```{r}
+plot(results_town)
+```
+
+QQ suggests some non-normality, but regression is robust to violations of normality.
 
 #### Marginal means & pairwise
 
@@ -425,6 +457,14 @@ Explicit threat and ITT measures are highly correlated. This provides additional
 results_explicit <- aov(explicit_comp ~ condition, data = clean_data)
 summary(results_explicit)
 ```
+
+#### Residuals
+
+```{r}
+plot(results_explicit)
+```
+
+QQ suggests some non-normality (as with the other measures), but regression models are often robust to violations.
 
 #### Marginal means & pairwise
 

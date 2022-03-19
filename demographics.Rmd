@@ -103,10 +103,10 @@ dem_percent_table(edu_counts)
 
 ```{r}
 edu_parent_counts <- clean_data %>% 
-  select(subid, education) %>%  
+  select(subid, parent_education) %>%  
   na.omit() %>% 
   unique() %>% 
-  group_by(education) %>% 
+  group_by(parent_education) %>% 
   count()
 
 dem_percent_table(edu_parent_counts)
