@@ -25,6 +25,7 @@ library(ggplot2)
 library(corrplot)
 library(factoextra)
 library(emmeans)
+library(nFactors)
 
 # Function to clean document
 source("functions/cleaning.R")
@@ -79,7 +80,7 @@ A lot were removed from the competitive target in comparison to the other condit
 
 ```{r}
 hist(clean_data$distance_coffee)
-````
+```
 
 Seat E is option "5," or the farthest seat away. It is left/negative-skewed to this option.
 
@@ -104,7 +105,7 @@ Committee member (Sara W) also informed me that unless I was missing responses f
 
 ```{r}
 hist(clean_data$distance_town)
-````
+```
 
 Right skewed (not as far of a distance), kind of plateaus at option 5. Still normal skew.
 
@@ -112,7 +113,7 @@ Right skewed (not as far of a distance), kind of plateaus at option 5. Still nor
 
 ```{r}
 hist(clean_data$realistic_q)
-````
+```
 
 Left/negative-skewed, with 4 = "Extremely threatening." I don't think this is concerning because it shows people are experiencing more threat overall and we had more threatening conditions than not. Skew is normal.
 
@@ -120,7 +121,7 @@ Left/negative-skewed, with 4 = "Extremely threatening." I don't think this is co
 
 ```{r}
 hist(clean_data$symbolic_q)
-````
+```
 
 Left/negative-skewed, same as with realistic threat above. Skew is normal.
 
@@ -128,7 +129,7 @@ Left/negative-skewed, same as with realistic threat above. Skew is normal.
 
 ```{r}
 hist(clean_data$explicit_targ)
-````
+```
 
 Looks evenly spread out.
 
@@ -136,7 +137,7 @@ Looks evenly spread out.
 
 ```{r}
 hist(clean_data$explicit_group)
-````
+```
 
 Left/negative skew. Seems people are more willing to discuss explicit threat of the group than the individual. Skew is normal.
 
@@ -146,7 +147,7 @@ Left/negative skew. Seems people are more willing to discuss explicit threat of 
 
 ```{r}
 hist(clean_data$pol_orient_1)
-````
+```
 
 Right/positive-skewed, not surprising as filtered for liberals and 1 = "extremely liberal." Skew is normal.
 
@@ -154,7 +155,7 @@ Right/positive-skewed, not surprising as filtered for liberals and 1 = "extremel
 
 ```{r}
 hist(clean_data$pol_orient_2)
-````
+```
 
 Right/positive-skewed, still not surprised for the same reasons. Skew is normal.
 
@@ -162,7 +163,7 @@ Right/positive-skewed, still not surprised for the same reasons. Skew is normal.
 
 ```{r}
 hist(clean_data$pol_orient_3)
-````
+```
 
 Right/positive-skewed. Skew is normal.
 
@@ -246,32 +247,19 @@ Distance measures not reliable together, which seems consistent with EFA results
 ```{r}
 threat_all <- clean_data %>% 
   select(distance_coffee, distance_town, realistic_q, symbolic_q, explicit_targ,
-         explicit_group)
-
+         explicit_group) %>% 
+  rename("Distance: Coffee" = distance_coffee,
+         "Distance: Town" = distance_town,
+         "Realistic" = realistic_q,
+         "Symbolic" = symbolic_q,
+         "Explicit: Target" = explicit_targ,
+         "Explicit: Group" = explicit_group)
 cor_matrix_all <- cor(threat_all)
 cor_matrix_all
 
-cor_plot_all_threat <- corrplot(cor_matrix_all, method = "number")
-
-colnames(cor_plot_all_threat) = rep(c('Distance: Coffee', 
-                                       'Distance: Town',
-                                       'Realistic',
-                                       'Symbolic',
-                                       'Explicit: Target',
-                                       'Explicit: Group'))
-
-rownames(cor_plot_all_threat) = rep(c('Distance: Coffee', 
-                                       'Distance: Town',
-                                       'Realistic',
-                                       'Symbolic',
-                                       'Explicit: Target',
-                                       'Explicit: Group'))
-corrplot(cor_plot_all_threat, 
-         is.corr = TRUE, 
-         #method = "number", 
-         method = 'color',
-         col.lim = c(0, 1),
-         tl.cex = .85,
+corrplot(cor_matrix_all, 
+        method = "color",
+        tl.cex = .85,
          tl.col = 'black',
          addgrid.col = 'white',
          addCoef.col = 'grey50')

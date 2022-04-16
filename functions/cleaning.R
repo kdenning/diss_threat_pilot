@@ -113,7 +113,15 @@ get_clean_data <- function(wide_df){
                                                   `2` = "Primarily raised in another country")),
          native_language = as.factor(dplyr::recode(native_language,
                                                    `1` = "English",
-                                                   `2` = "Not English"))) %>% 
+                                                   `2` = "Not English")),
+         distance_town = as.numeric(dplyr::recode(distance_town, #Incorrectly coded in Qualtrics; the codes below are correct
+                                                  `1` = "1",
+                                                  `2` = "2",
+                                                  `3` = "3",
+                                                  `4` = "4",
+                                                  `5` = "6",
+                                                  `6` = "7",
+                                                  `7` = "5"))) %>% 
   # Making relevant variables numeric
   mutate_at(c("distance_coffee", "distance_town", "realistic_q", "symbolic_q", 
             "explicit_targ", "explicit_group", "pol_orient_1", "pol_orient_2",
