@@ -74,6 +74,15 @@ clean_data %>%
 
 A lot were removed from the competitive target in comparison to the other conditions.
 
+### Participants who got manipulation check "somewhat correct"
+
+```{r}
+clean_data %>% 
+  mutate(q_check_politics = as.factor(q_check_politics)) %>% 
+  filter(q_check_politics == "Somewhat correct") %>% 
+  count()
+```
+
 ## Histograms
 
 ### Distance in coffee shop
@@ -149,12 +158,24 @@ Left/negative skew. Seems people are more willing to discuss explicit threat of 
 hist(clean_data$pol_orient_1)
 ```
 
+```{r}
+clean_data %>% 
+  group_by(pol_orient_1) %>% 
+  count()
+```
+
 Right/positive-skewed, not surprising as filtered for liberals and 1 = "extremely liberal." Skew is normal.
 
 #### Social 
 
 ```{r}
 hist(clean_data$pol_orient_2)
+```
+
+```{r}
+clean_data %>% 
+  group_by(pol_orient_2) %>% 
+  count()
 ```
 
 Right/positive-skewed, still not surprised for the same reasons. Skew is normal.
@@ -164,6 +185,13 @@ Right/positive-skewed, still not surprised for the same reasons. Skew is normal.
 ```{r}
 hist(clean_data$pol_orient_3)
 ```
+
+```{r}
+clean_data %>% 
+  group_by(pol_orient_3) %>% 
+  count()
+```
+
 
 Right/positive-skewed. Skew is normal.
 
@@ -181,13 +209,6 @@ cor_matrix
 ```
 
 ## EFA
-
-### Can an EFA be run? 
-
-```{r EFA check}
-# Check factor structure to see if there is enough correlation, etc. for factor analysis
-check_factorstructure(efa_data)
-```
 
 ### What number of factors are advisable?
 
@@ -262,7 +283,8 @@ corrplot(cor_matrix_all,
         tl.cex = .85,
          tl.col = 'black',
          addgrid.col = 'white',
-         addCoef.col = 'grey50')
+         addCoef.col = 'grey50',
+        type = 'lower')
 ```
 
 The high correlations with explicit threat, though not expected, validate our measures of symbolic and realistic threat.
@@ -432,7 +454,9 @@ range(clean_data$explicit_comp)
 cor_threat_comps <- clean_data %>% 
   select(itt_comp, explicit_comp)
 
-cor(cor_threat_comps)
+cor <- cor(cor_threat_comps)
+cor.test(cor_threat_comps$itt_comp, cor_threat_comps$explicit_comp, methdo = "pearson")
+
 ```
 
 Explicit threat and ITT measures are highly correlated. This provides additional validation.
